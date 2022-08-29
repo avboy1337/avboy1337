@@ -1,0 +1,59 @@
+<script>
+
+    var lineNum = 0;
+    function print(line)
+    {
+        document.writeln("<p>"+line+"</p>");
+    }
+    const poc = `select sqlite_version();`;
+    const name = 'db' + Math.random().toString().slice(2, 5);
+    const db = openDatabase(name, '1.0', 'xx', 1024 * 16);
+    function ExtractSuccessMsg(obj) {
+        for (var a in obj) {
+            if (typeof (obj[a]) == "object") {
+                ExtractSuccessMsg(obj[a]); //递归遍历
+            }
+            // 不显示length和item
+            else {
+                if ((a.toString() != "length") && (a.toString() != "item")) {
+                    // console.log(a + "=" + obj[a]);//值显示
+                    print(a + "=" + obj[a]);
+                }
+            }
+        }
+    }
+    function ExtractErrorMsg(obj) {
+        for (var a in obj) {
+            if (typeof (obj[a]) == "object") {
+                ExtractErrorMsg(obj[a]); //递归遍历
+            }
+            // 不显示length和item
+            else {
+                if (a.toString() == "message") {
+                    // console.log(a + "=" + obj[a]);//值就显示
+                    print(a + "=" + obj[a]);
+                }
+            }
+        }
+    }
+    function dbSuccess(tx, results) {
+        lineNum = lineNum + 1;
+        ExtractSuccessMsg(results.rows);
+    }
+    function dbErr(tx, results) {
+        lineNum = lineNum + 1;
+        print("error line:" + lineNum.toString());
+        ExtractErrorMsg(results)
+    }
+    const exec = sql =>
+        new Promise((resolve, reject) =>
+            db.transaction(tx =>
+                tx.executeSql(
+                    sql,
+                    [],
+                    dbSuccess, dbErr
+                )
+            )
+        )
+    const tasks = poc.split('\n').map(exec);
+</script>
